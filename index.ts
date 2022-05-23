@@ -16,17 +16,17 @@ export default class Cookie {
 
 	public constructor(private readonly document: Document) {}
 
-	public get(key: string): string;
+	public get(key: string, typeCast?: boolean): SingleEntryReturnType<typeof typeCast>;
 
-	public get(): TypedMap;
+	public get(typeCast?: boolean): TypedMap<SingleEntryReturnType<typeof typeCast>>;
 
-	public get(key?: string): string | TypedMap {}
+	public get(a: any, b?: any): any {}
 
-	public set(key: string, value: string | number, attributes?: Attributes): void;
+	public set(key: string, value: boolean | number | string, attributes?: Attributes): void;
 
-	public set(object: TypedMap<string | number | ValueEntry>): void;
+	public set(object: TypedMap<boolean | number | string | ValueEntry>): void;
 
-	public set(a: any, b?: string | number, attributes?: Attributes): void {}
+	public set(a: any, b?: any, attributes?: any): void {}
 
 	public unset(key: string): void {}
 
@@ -34,10 +34,12 @@ export default class Cookie {
 
 	public toString(): string {}
 
-	public static parse(data: string): TypedMap {}
+	public static parse(data: string, typeCast: boolean = false): TypedMap<SingleEntryReturnType<typeof typeCast>> {}
 
-	public static stringify(data: TypedMap<string | number | ValueEntry>, asHeader: boolean = true): string {}
+	public static stringify(data: TypedMap<boolean | number | string | ValueEntry>): string {}
 }
+
+type SingleEntryReturnType<T extends boolean | undefined> = (T extends true ? boolean | number : never) | string | null;
 
 /**
  * Represent cookie's additional attributes
