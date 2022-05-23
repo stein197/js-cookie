@@ -1,3 +1,30 @@
+export default class Cookie {
+
+	public get enabled(): boolean {}
+
+	public constructor(private readonly document: Document) {}
+
+	public get(key: string): string;
+
+	public get(): TypedMap;
+
+	public get(key?: string): string | TypedMap {}
+
+	public set(key: string, value: string | number, attributes?: Attributes): void;
+
+	public set(object: TypedMap<string | number | ValueEntry>): void;
+
+	public set(a: any, b?: string | number, attributes?: Attributes): void {}
+
+	public unset(key: string): void {}
+
+	public clean(): void {}
+
+	public static parse(data: string): TypedMap {}
+
+	public static stringify(data: TypedMap<string | number | ValueEntry>, asHeader: boolean = true): string[] {}
+}
+
 /**
  * Represent cookie's additional attributes
  */
