@@ -1,6 +1,18 @@
 export default class Cookie {
 
-	public get enabled(): boolean {}
+	/**
+	 * Checks if cookie are enabled in a browser.
+	 * @returns `true` if cookies are enabled in browser.
+	 */
+	public get enabled(): boolean {
+		const defaultView = this.document.defaultView;
+		if (defaultView?.navigator && "cookieEnabled" in defaultView.navigator)
+			return defaultView.navigator.cookieEnabled;
+		this.set("__cookie", "true");
+		const exists = this.get("__cookie") === "true";
+		this.unset("__cookie");
+		return exists;
+	}
 
 	public constructor(private readonly document: Document) {}
 
@@ -20,9 +32,11 @@ export default class Cookie {
 
 	public clean(): void {}
 
+	public toString(): string {}
+
 	public static parse(data: string): TypedMap {}
 
-	public static stringify(data: TypedMap<string | number | ValueEntry>, asHeader: boolean = true): string[] {}
+	public static stringify(data: TypedMap<string | number | ValueEntry>, asHeader: boolean = true): string {}
 }
 
 /**
@@ -143,19 +157,6 @@ export function stringify(data: TypedMap<string | number | ValueEntry>, asHeader
 		result.push(stringifyEntry(key, data[key], delimiter));
 	}
 	return result;
-}
-
-/**
- * Checks if cookie are enabled in browser.
- * @returns `true` if cookies are enabled in browser.
- */
-export function enabled(): boolean {
-	if ("cookieEnabled" in navigator)
-		return navigator.cookieEnabled;
-	set("cookie", "true");
-	let exists = get("cookie") === "true";
-	unset("cookie");
-	return exists;
 }
 
 function getByKey(key: string): string {
