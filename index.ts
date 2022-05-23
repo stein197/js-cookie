@@ -21,15 +21,15 @@ export default class Cookie {
 
 	public constructor(private readonly document: Document) {}
 
-	public get(key: string, typeCast?: boolean): SingleEntryReturnType<typeof typeCast>;
+	public get(key: string, typeCast?: boolean): PrimitiveValueReturnType<typeof typeCast> | null;
 
-	public get(typeCast?: boolean): TypedMap<SingleEntryReturnType<typeof typeCast>>;
+	public get(typeCast?: boolean): TypedMap<PrimitiveValueReturnType<typeof typeCast>>;
 
 	public get(a: any, b?: any): any {}
 
-	public set(key: string, value: boolean | number | string, attributes?: Attributes): void;
+	public set(key: string, value: PrimitiveValue, attributes?: Attributes): void;
 
-	public set(object: TypedMap<boolean | number | string | ValueEntry>): void;
+	public set(object: TypedMap<PrimitiveValue | ValueEntry>): void;
 
 	public set(a: any, b?: any, attributes?: any): void {}
 
@@ -56,9 +56,9 @@ export default class Cookie {
 		return this.document.cookie;
 	}
 
-	public static parse(data: string, typeCast: boolean = false): TypedMap<SingleEntryReturnType<typeof typeCast>> {}
+	public static parse(data: string, typeCast: boolean = false): TypedMap<PrimitiveValueReturnType<typeof typeCast>> {}
 
-	public static stringify(data: TypedMap<boolean | number | string | ValueEntry>): string {}
+	public static stringify(data: TypedMap<PrimitiveValue | ValueEntry>): string {}
 }
 
 function mergeAttributes(a: Attributes): Attributes {
@@ -68,7 +68,9 @@ function mergeAttributes(a: Attributes): Attributes {
 	};
 }
 
-type SingleEntryReturnType<T extends boolean | undefined> = (T extends true ? boolean | number : never) | string | null;
+type PrimitiveValue = boolean | number | string;
+
+type PrimitiveValueReturnType<Cast extends boolean | undefined> = (Cast extends true ? boolean | number : never) | string;
 
 /**
  * Represent cookie's additional attributes
