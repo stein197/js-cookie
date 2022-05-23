@@ -28,7 +28,17 @@ export default class Cookie {
 
 	public set(a: any, b?: any, attributes?: any): void {}
 
-	public unset(key: string): void {}
+	/**
+	 * Deletes cookie by provided key.
+	 * @param key Key by which cookie should be removed.
+	 * @param attributes Attributes.
+	 */
+	public unset(key: string, attributes: Attributes = DEFAULT_ATTRIBUTES): void {
+		this.set(key, "", {
+			...attributes,
+			expires: "Thu, 01 Jan 1970 00:00:00 GMT"
+		});
+	}
 
 	public clean(): void {}
 
@@ -110,15 +120,6 @@ export function set(a: any, b?: string | number, attributes?: Attributes): void 
 		setAsMap(a);
 }
 
-/**
- * Deletes cookie by provided key
- * @param key Key by which cookie should be removed
- */
-export function unset(key: string): void {
-	let zeroDate = new Date;
-	zeroDate.setTime(0);
-	document.cookie = `${encodeURIComponent(key)}=;expires=${zeroDate.toUTCString()};path=/`;
-}
 
 /**
  * Tries to delete all cookies in page (or domain)
