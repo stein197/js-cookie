@@ -1,10 +1,4 @@
-/out/
-/src/
-/test/
-/.gitignore
-/gulpfile.ts
 /tsconfig.json
-/babel.config.json
-/webpack.config.ts
-/README.md
-/CHANGELOG.md
+/*.ts
+!/*.d.ts
+/test.*

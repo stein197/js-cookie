@@ -1,7 +1,7 @@
 /**
  * Represent cookie's additional attributes
  */
-type Attributes = Partial<{
+ type Attributes = Partial<{
 	/** Path to location this cookie is available. By default is `/` */
 	path: string,
 	/** At which date cookie expires */
