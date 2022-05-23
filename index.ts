@@ -35,12 +35,17 @@ export default class Cookie {
 	 */
 	public unset(key: string, attributes: Attributes = DEFAULT_ATTRIBUTES): void {
 		this.set(key, "", {
-			...attributes,
+			...mergeAttributes(attributes),
 			expires: "Thu, 01 Jan 1970 00:00:00 GMT"
 		});
 	}
-
-	public clean(): void {}
+	
+	/**
+	 * Tries to delete all cookies in page (or domain)
+	 */
+	public clean(): void {
+		Object.keys(this.get()).forEach(key => this.unset(key));
+	}
 
 	public toString(): string {
 		return this.document.cookie;
@@ -49,6 +54,13 @@ export default class Cookie {
 	public static parse(data: string, typeCast: boolean = false): TypedMap<SingleEntryReturnType<typeof typeCast>> {}
 
 	public static stringify(data: TypedMap<boolean | number | string | ValueEntry>): string {}
+}
+
+function mergeAttributes(a: Attributes): Attributes {
+	return a === DEFAULT_ATTRIBUTES ? a : {
+		...DEFAULT_ATTRIBUTES,
+		...a
+	};
 }
 
 type SingleEntryReturnType<T extends boolean | undefined> = (T extends true ? boolean | number : never) | string | null;
@@ -121,13 +133,6 @@ export function set(a: any, b?: string | number, attributes?: Attributes): void 
 }
 
 
-/**
- * Tries to delete all cookies in page (or domain)
- */
-export function clean(): void {
-	for (let key in getAll())
-		unset(key);
-}
 
 /**
  * Parses cookie string into a key-value object.
