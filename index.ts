@@ -21,15 +21,15 @@ export default class Cookie {
 
 	public constructor(private readonly document: Document) {}
 
-	public get(key: string, typeCast?: boolean): PrimitiveValueReturnType<typeof typeCast> | null;
+	public get(key: string): string | null;
 
-	public get(typeCast?: boolean): TypedMap<PrimitiveValueReturnType<typeof typeCast>>;
+	public get(): TypedMap;
 
-	public get(a: any, b?: any): any {}
+	public get(key?: string): TypedMap {}
 
-	public set(key: string, value: PrimitiveValue, attributes?: Attributes): void;
+	public set(key: string, value: string, attributes?: Attributes): void;
 
-	public set(object: TypedMap<PrimitiveValue | ValueEntry>): void;
+	public set(object: TypedMap<string | ValueEntry>): void;
 
 	public set(a: any, b?: any, attributes?: any): void {}
 
@@ -56,9 +56,24 @@ export default class Cookie {
 		return this.document.cookie;
 	}
 
-	public static parse(data: string, typeCast: boolean = false): TypedMap<PrimitiveValueReturnType<typeof typeCast>> {}
+	/**
+	 * Parses cookie string into a key-value object.
+	 * @param data Cookie string.
+	 * @returns Parsed object. If the string contains key with empty value, then the result will contain that entry with
+	 *          empty value.
+	 */
+	public static parse(data: string): TypedMap {
+		return data
+			.trim()
+			.split(/\s*;\s*/g)
+			.map(pair => pair.split("="))
+			.filter(pair => pair[1])
+			.map(pair => pair
+				.map(s => decodeURIComponent(s)))
+			.reduce((prev, cur) => prev[cur[0]] = cur[1], {} as any);
+	}
 
-	public static stringify(data: TypedMap<PrimitiveValue | ValueEntry>): string {}
+	public static stringify(data: TypedMap<string | ValueEntry>): string {}
 }
 
 function mergeAttributes(a: Attributes): Attributes {
@@ -67,10 +82,6 @@ function mergeAttributes(a: Attributes): Attributes {
 		...a
 	};
 }
-
-type PrimitiveValue = boolean | number | string;
-
-type PrimitiveValueReturnType<Cast extends boolean | undefined> = (Cast extends true ? boolean | number : never) | string;
 
 /**
  * Represent cookie's additional attributes
@@ -133,26 +144,6 @@ export function set(a: any, b?: string | number, attributes?: Attributes): void 
 		setForKey(a, b, attributes);
 	else
 		setAsMap(a);
-}
-
-
-
-/**
- * Parses cookie string into a key-value object.
- * @param data Cookie string.
- * @returns Parsed object. If the string contains key with empty value, then the result will contain that entry with
- *          empty value. If the string contains entry with empty value, then the result will not contain that entry.
- */
-export function parse(data: string): TypedMap {
-	const pairs: string[] = data.trim().split(/\s*;\s*/g).filter(pair => pair.length);
-	const result: TypedMap = {};
-	for (let pair of pairs) {
-		let [key, value] = pair.split("=").map(entry => entry.trim());
-		if (!key)
-			continue;
-		result[decodeURIComponent(key)] = decodeURIComponent(value);
-	}
-	return result;
 }
 
 /**
