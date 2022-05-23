@@ -1,3 +1,8 @@
+const DATE_ZERO = "Thu, 01 Jan 1970 00:00:00 GMT";
+const DEFAULT_ATTRIBUTES: Attributes = {
+	path: "/"
+}
+
 export default class Cookie {
 
 	/**
@@ -36,7 +41,7 @@ export default class Cookie {
 	public unset(key: string, attributes: Attributes = DEFAULT_ATTRIBUTES): void {
 		this.set(key, "", {
 			...mergeAttributes(attributes),
-			expires: "Thu, 01 Jan 1970 00:00:00 GMT"
+			expires: DATE_ZERO
 		});
 	}
 	
@@ -87,10 +92,6 @@ type TypedMap<T = string> = {[key: string]: T}
 
 /** Cookie attributes plus value field */
 type ValueEntry = Attributes & {value: string | number}
-
-const DEFAULT_ATTRIBUTES: Attributes = {
-	path: "/"
-};
 
 /**
  * Returns single cookie entry
