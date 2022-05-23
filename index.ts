@@ -32,7 +32,9 @@ export default class Cookie {
 
 	public clean(): void {}
 
-	public toString(): string {}
+	public toString(): string {
+		return this.document.cookie;
+	}
 
 	public static parse(data: string, typeCast: boolean = false): TypedMap<SingleEntryReturnType<typeof typeCast>> {}
 
