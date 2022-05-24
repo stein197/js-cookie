@@ -23,11 +23,28 @@ export default class Cookie {
 
 	public constructor(private readonly document: Document) {}
 
+	/**
+	 * Returns single cookie entry.
+	 * @param key Cookie's key which value should be returned.
+	 * @returns Cookie value or `null` if value associated with the key does not exist.
+	 */
 	public get(key: string): Nullable<string>;
 
+	/**
+	 * Returns all cookies.
+	 */
 	public get(): ObjectMap<string>;
 
-	public get(key?: string): ObjectMap<string> | Nullable<string> {}
+	public get(key?: string): ObjectMap<string> | Nullable<string> {
+		if (!document.cookie)
+			return key ? null : {};
+		if (!key)
+			return Cookie.parse(this.document.cookie);
+		for (const [k, v] of Object.entries(Cookie.parse(this.document.cookie)))
+			if (k === key)
+				return v;
+		return null;
+	}
 
 	public set(key: string, value: string, attributes?: Attributes): void;
 
@@ -64,7 +81,7 @@ export default class Cookie {
 	 * @returns Parsed object. If the string contains key with empty value, then the result will contain that entry with
 	 *          empty value.
 	 */
-	public static parse(data: string): ObjectMap {
+	public static parse(data: string): ObjectMap<string> {
 		return data
 			.trim()
 			.split(/\s*;\s*/g)
@@ -106,25 +123,6 @@ function mergeAttributes(a: Attributes): Attributes {
 type ValueEntry = Attributes & {value: string | number}
 
 /**
- * Returns single cookie entry
- * @param key Cookie's key which value should be returned
- * @returns Cookie value or `null` if value
- *          associated with {@link key} does not exist
- */
-export function get(key: string): string;
-
-/**
- * Returns all the cookies stored in current location
- */
-export function get(): ObjectMap<string>;
-
-export function get(key?: string): Nullable<string> | ObjectMap<string> {
-	if (!document.cookie)
-		return key ? null : {};
-	return key ? getByKey(key) : getAll();
-}
-
-/**
  * Sets cookie's value with key `key`
  * @param key Which cookie should ba changed
  * @param value New value
@@ -160,17 +158,6 @@ export function stringify(data: ObjectMap<string | number | ValueEntry>, asHeade
 		result.push(stringifyEntry(key, data[key], delimiter));
 	}
 	return result;
-}
-
-function getByKey(key: string): string {
-	for (const [k, v] of Object.entries(parse(document.cookie)))
-		if (k === key)
-			return v;
-	return null;
-}
-
-function getAll(): ObjectMap<string> {
-	return parse(document.cookie);
 }
 
 function setForKey(key: string, value: string | number, attributes?: Attributes): void {
