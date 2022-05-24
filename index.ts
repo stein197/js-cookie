@@ -1,3 +1,5 @@
+import type {Nullable, ObjectMap} from "@stein197/ts-util";
+
 const DATE_ZERO = "Thu, 01 Jan 1970 00:00:00 GMT";
 const DEFAULT_ATTRIBUTES: Attributes = {
 	path: "/"
@@ -21,15 +23,15 @@ export default class Cookie {
 
 	public constructor(private readonly document: Document) {}
 
-	public get(key: string): string | null;
+	public get(key: string): Nullable<string>;
 
-	public get(): TypedMap;
+	public get(): ObjectMap<string>;
 
-	public get(key?: string): TypedMap {}
+	public get(key?: string): ObjectMap<string> | Nullable<string> {}
 
 	public set(key: string, value: string, attributes?: Attributes): void;
 
-	public set(object: TypedMap<string | ValueEntry>): void;
+	public set(object: ObjectMap<string | ValueEntry>): void;
 
 	public set(a: any, b?: any, attributes?: any): void {}
 
@@ -62,7 +64,7 @@ export default class Cookie {
 	 * @returns Parsed object. If the string contains key with empty value, then the result will contain that entry with
 	 *          empty value.
 	 */
-	public static parse(data: string): TypedMap {
+	public static parse(data: string): ObjectMap {
 		return data
 			.trim()
 			.split(/\s*;\s*/g)
@@ -73,7 +75,7 @@ export default class Cookie {
 			.reduce((prev, cur) => prev[cur[0]] = cur[1], {} as any);
 	}
 
-	public static stringify(data: TypedMap<string | ValueEntry>): string {}
+	public static stringify(data: ObjectMap<string | ValueEntry>): string {}
 }
 
 function mergeAttributes(a: Attributes): Attributes {
@@ -100,9 +102,6 @@ function mergeAttributes(a: Attributes): Attributes {
 	httponly: boolean
 }>
 
-/** Simple wrap around generic type {[key: string]: <type>} */
-type TypedMap<T = string> = {[key: string]: T}
-
 /** Cookie attributes plus value field */
 type ValueEntry = Attributes & {value: string | number}
 
@@ -117,9 +116,9 @@ export function get(key: string): string;
 /**
  * Returns all the cookies stored in current location
  */
-export function get(): TypedMap;
+export function get(): ObjectMap<string>;
 
-export function get(key?: string): string | TypedMap {
+export function get(key?: string): Nullable<string> | ObjectMap<string> {
 	if (!document.cookie)
 		return key ? null : {};
 	return key ? getByKey(key) : getAll();
@@ -137,7 +136,7 @@ export function set(key: string, value: string | number, attributes?: Attributes
  * Sets cookies as map
  * @param object Map-like object. Values could be a string or cookie descriptor
  */
-export function set(object: TypedMap<string | number | ValueEntry>): void;
+export function set(object: ObjectMap<string | number | ValueEntry>): void;
 
 export function set(a: any, b?: string | number, attributes?: Attributes): void {
 	if (typeof a === "string")
@@ -152,7 +151,7 @@ export function set(a: any, b?: string | number, attributes?: Attributes): void 
  * @param asHeader If `true` the result will be an array of cookie headers ready to be used in "Set-Cookie" header.
  * @return Stringified cookie.
  */
-export function stringify(data: TypedMap<string | number | ValueEntry>, asHeader: boolean = true): string[] {
+export function stringify(data: ObjectMap<string | number | ValueEntry>, asHeader: boolean = true): string[] {
 	const result: string[] = [];
 	const delimiter: string = asHeader ? "; " : ";";
 	for (const key in data) {
@@ -170,7 +169,7 @@ function getByKey(key: string): string {
 	return null;
 }
 
-function getAll(): TypedMap {
+function getAll(): ObjectMap<string> {
 	return parse(document.cookie);
 }
 
@@ -178,7 +177,7 @@ function setForKey(key: string, value: string | number, attributes?: Attributes)
 	document.cookie = stringifyEntry(key, {...attributes, value}, ";");
 }
 
-function setAsMap(object: TypedMap<string | number | ValueEntry>): void {
+function setAsMap(object: ObjectMap<string | number | ValueEntry>): void {
 	for (const key in object) {
 		const entry = object[key];
 		if (isSimple(entry))
