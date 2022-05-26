@@ -4,6 +4,36 @@ const DATE_ZERO = "Thu, 01 Jan 1970 00:00:00 GMT";
 const DEFAULT_ATTRIBUTES: Attributes = {
 	path: "/"
 }
+const ATTR_MAP: {[K in keyof Required<Attributes>]: {DOM: string; HTTP: string}} = {
+	path: {
+		DOM: "path",
+		HTTP: "Path"
+	},
+	expires: {
+		DOM: "expires",
+		HTTP: "Expires"
+	},
+	maxAge: {
+		DOM: "max-age",
+		HTTP: "Max-Age"
+	},
+	domain: {
+		DOM: "domain",
+		HTTP: "Domain"
+	},
+	secure: {
+		DOM: "secure",
+		HTTP: "Secure"
+	},
+	sameSite: {
+		DOM: "samesite",
+		HTTP: "SameSite"
+	},
+	httpOnly: {
+		DOM: "httponly",
+		HTTP: "HttpOnly"
+	},
+}
 
 export default class Cookie {
 
@@ -46,11 +76,33 @@ export default class Cookie {
 		return null;
 	}
 
+	/**
+	 * Sets cookie's value with key `key`
+	 * @param key Which cookie should ba changed
+	 * @param value New value
+	 * @param attributes Additional attributes
+	 */
 	public set(key: string, value: string, attributes?: Attributes): void;
 
-	public set(object: ObjectMap<string | ValueEntry>): void;
+	/**
+	 * Sets cookies as map
+	 * @param object Map-like object. Values could be a string or cookie descriptor
+	 */
+	public set(object: ObjectMap<string | Attributes<true>>): void;
 
-	public set(a: any, b?: any, attributes?: any): void {}
+	public set(a: string | ObjectMap<string | Attributes<true>>, b?: string, attributes?: Attributes): void {
+		const data = typeof a === "string" ? {
+			[a]: {
+				...attributes,
+				value: b!
+			}
+		} : a;
+		for (const key in data) {
+			const entry = data[key];
+			const value = typeof entry === "string" ? entry : entry.value;
+			this.document.cookie = Cookie.stringify(key, value, attributes);
+		}
+	}
 
 	/**
 	 * Deletes cookie by provided key.
@@ -76,10 +128,9 @@ export default class Cookie {
 	}
 
 	/**
-	 * Parses cookie string into a key-value object.
+	 * Parses cookie DOM string into a key-value object.
 	 * @param data Cookie string.
-	 * @returns Parsed object. If the string contains key with empty value, then the result will contain that entry with
-	 *          empty value.
+	 * @returns Parsed object.
 	 */
 	public static parse(data: string): ObjectMap<string> {
 		return data
@@ -92,7 +143,31 @@ export default class Cookie {
 			.reduce((prev, cur) => prev[cur[0]] = cur[1], {} as any);
 	}
 
-	public static stringify(data: ObjectMap<string | ValueEntry>): string {}
+	/**
+	 * Stringifies map of cookies.
+	 * @param key Which cookie should ba changed
+	 * @param value New value
+	 * @param attributes Data to be stringified.
+	 * @param http
+	 * @return Stringified cookie.
+	 */
+	public static stringify(key: string, value: string, attributes?: Attributes, http?: boolean): string {
+		const result = [
+			`${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+		];
+		if (attributes)
+			for (const [k, v] of Object.entries(attributes) as [keyof Attributes, any][]) {
+				const kName = ATTR_MAP[k][http ? "HTTP" : "DOM"];
+				const vType = typeof v;
+				if (v === true)
+					result.push(kName);
+				else if (v instanceof Date)
+					result.push(`${kName}=${v.toUTCString()}`);
+				else if (vType === "number" || vType === "string")
+					result.push(`${kName}=${v}`);
+			}
+		return result.join("; ");
+	}
 }
 
 function mergeAttributes(a: Attributes): Attributes {
@@ -105,100 +180,16 @@ function mergeAttributes(a: Attributes): Attributes {
 /**
  * Represent cookie's additional attributes
  */
- type Attributes = Partial<{
+type Attributes<IncludeValue extends boolean = false> = Partial<{
 	/** Path to location this cookie is available. By default is `/` */
-	path: string,
+	path: string;
 	/** At which date cookie expires */
-	expires: string | Date,
+	expires: string | Date;
 	/** Max age of cookie in seconds */
-	maxAge: number,
+	maxAge: number;
 	/** Domain within which the cookie is available */
-	domain: string,
-	secure: boolean,
-	samesite: boolean,
-	httponly: boolean
-}>
-
-/** Cookie attributes plus value field */
-type ValueEntry = Attributes & {value: string | number}
-
-/**
- * Sets cookie's value with key `key`
- * @param key Which cookie should ba changed
- * @param value New value
- * @param attributes Additional attributes
- */
-export function set(key: string, value: string | number, attributes?: Attributes): void;
-
-/**
- * Sets cookies as map
- * @param object Map-like object. Values could be a string or cookie descriptor
- */
-export function set(object: ObjectMap<string | number | ValueEntry>): void;
-
-export function set(a: any, b?: string | number, attributes?: Attributes): void {
-	if (typeof a === "string")
-		setForKey(a, b, attributes);
-	else
-		setAsMap(a);
-}
-
-/**
- * Stringifies map of cookies.
- * @param data Data to be stringified.
- * @param asHeader If `true` the result will be an array of cookie headers ready to be used in "Set-Cookie" header.
- * @return Stringified cookie.
- */
-export function stringify(data: ObjectMap<string | number | ValueEntry>, asHeader: boolean = true): string[] {
-	const result: string[] = [];
-	const delimiter: string = asHeader ? "; " : ";";
-	for (const key in data) {
-		if (!key)
-			continue;
-		result.push(stringifyEntry(key, data[key], delimiter));
-	}
-	return result;
-}
-
-function setForKey(key: string, value: string | number, attributes?: Attributes): void {
-	document.cookie = stringifyEntry(key, {...attributes, value}, ";");
-}
-
-function setAsMap(object: ObjectMap<string | number | ValueEntry>): void {
-	for (const key in object) {
-		const entry = object[key];
-		if (isSimple(entry))
-			setForKey(key, entry);
-		else
-			setForKey(key, entry.value, entry);
-	}
-}
-
-function prop2attr(prop: string): string {
-	return prop.split(/(?=[A-Z])/g).join("-");
-}
-
-function stringifyEntry(key: string, entry: string | number | ValueEntry, delimiter: string): string {
-	const attributes: Attributes = isSimple(entry) ? DEFAULT_ATTRIBUTES : {...DEFAULT_ATTRIBUTES, ...entry};
-	delete (attributes as ValueEntry).value;
-	const value: string | number = isSimple(entry) ? entry : entry.value;
-	let result: string[] = [
-		`${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-	];
-	for (const prop in attributes) {
-		const attrValue: string | number | boolean | Date = attributes[prop];
-		const attrName: string = prop2attr(prop);
-		if (isSimple(attrValue))
-			result.push(`${attrName}=${attrValue}`);
-		else if (attrValue instanceof Date)
-			result.push(`${attrName}=${attrValue.toUTCString()}`);
-		else
-			result.push(attrName);
-	}
-	return result.join(delimiter);
-}
-
-function isSimple(obj): obj is string | number {
-	const type: string = typeof obj;
-	return type === "string" || type === "number";
-}
+	domain: string;
+	secure: boolean;
+	sameSite: "Strict" | "Lax" | "None";
+	httpOnly: boolean;
+}> & (IncludeValue extends true ? {value: string} : {})
